@@ -1,85 +1,70 @@
-use kiss3d::scene::SceneNode;
 use nalgebra as na;
-use kiss3d::window::Window;
-use na::{Isometry3, Point3};
+use na::{Point2, Vector2};
+
+use sdl2::gfx::primitives::DrawRenderer;
+use sdl2::pixels::Color;
+use sdl2::render::WindowCanvas;
 
 pub struct Particle {
-    position: Isometry3<f32>,
-    velocity: Isometry3<f32>,
-    acceleration: Isometry3<f32>,
-    scene_node: Option<SceneNode>,
-    display_radius: Option<f32>,
+    position: Point2<f32>,
+    velocity: Vector2<f32>,
+    acceleration: Vector2<f32>,
+    display_radius: i16,
     mass: f32,
 }
 
 impl Particle {
-    pub fn new(position: Isometry3<f32>, velocity: Isometry3<f32>, acceleration: Isometry3<f32>, mass: f32) -> Self {
+    pub fn new(position: Point2<f32>, velocity: Vector2<f32>, acceleration: Vector2<f32>, mass: f32) -> Self {
         Self {
             position,
             velocity,
             acceleration,
-            scene_node: None,
-            display_radius: None,
+            display_radius: 10,
             mass,
         }
     }
 
-    pub fn display(&mut self, window: &mut Window, display_radius: f32) {
-        let mut scene_node      = window.add_sphere(display_radius);
-        scene_node.set_color(1.0, 0.0, 0.0);
-        self.scene_node = Some(scene_node);
-        self.display_radius = Some(display_radius);
+    pub fn display(&mut self, canvas: &mut WindowCanvas) {
+        let _ = canvas.filled_circle(self.position.x as i16, self.position.y as i16, self.display_radius, Color::RGB(255, 210, 0));
     }
 
-    pub fn update(&mut self, window_size: &na::base::Vector2<u32>) {
+    pub fn update(&mut self) {
         // Semi-implicit Euler Integration
-        self.velocity.append_translation_mut(&self.acceleration.translation);
+        self.velocity += self.acceleration;
 
         self.update_x_position();
         self.update_y_position();
-
-        match self.scene_node.as_mut() {
-            Some(n) => {
-                n.set_local_translation(self.position.translation);
-            },
-            None => {},
-        }
     }
 
     // TODO: Replace with real collision physics
     fn update_x_position(&mut self) {
-        let mut new_x_position = self.velocity.translation.x + self.position.translation.x;
-
-        let display_radius = self.display_radius.unwrap();
+        let mut new_x_position = self.position.x + self.velocity.x;
 
         // TODO: Figure out window boundaries based on coordinates
-        if new_x_position + display_radius >= 0.5 {
-            new_x_position = 0.5 - display_radius;
-            self.velocity.translation.x = -self.velocity.translation.x;
-        }
-        else if new_x_position - display_radius <= -0.5 {
-            new_x_position = -0.5 + display_radius;
-            self.velocity.translation.x = -self.velocity.translation.x;
+        if new_x_position - (self.display_radius as f32) < 0.0 {
+            new_x_position = self.display_radius as f32;
+            self.velocity.x = -self.velocity.x;
+        } else if new_x_position + (self.display_radius as f32) > 800.00 {
+            new_x_position = 800.00 - self.display_radius as f32;
+            self.velocity.x = -self.velocity.x;
         }
 
-        self.position.translation.x = new_x_position;
+        self.position.x = new_x_position;
     }
 
     // TODO: Replace with real collision physics
     fn update_y_position(&mut self) {
-        let mut new_y_position = self.velocity.translation.y + self.position.translation.y;
+        let mut new_y_position = self.position.y + self.velocity.y;
 
-        let display_radius = self.display_radius.unwrap();
-
-        if new_y_position + display_radius > 0.3 {
-            new_y_position = 0.3 + display_radius;
-            self.velocity.translation.y = -self.velocity.translation.y;
+        // TODO: Figure out window boundaries based on coordinates
+        if new_y_position - (self.display_radius as f32) < 0.0 {
+            new_y_position = self.display_radius as f32;
+            self.velocity.y = -self.velocity.y;
+        } else if new_y_position + (self.display_radius as f32) > 600.00 {
+            new_y_position = 600.00 - self.display_radius as f32;
+            self.velocity.y = -self.velocity.y;
         }
-        else if new_y_position - display_radius <= -0.3 {
-            new_y_position = -0.3 + display_radius;
-            self.acceleration.translation.x = 0.0;
-            self.velocity.translation.y = -self.velocity.translation.y;        }
 
-        self.position.translation.y = new_y_position;
+        self.position.y = new_y_position;
     }
 }

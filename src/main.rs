@@ -1,60 +1,53 @@
-extern crate kiss3d;
 extern crate nalgebra as na;
 
-use kiss3d::camera::{ArcBall, FirstPerson};
-use na::{Vector3, UnitQuaternion, Point1, Point3, Translation3, Isometry3};
-use kiss3d::window::Window;
-use kiss3d::light::Light;
-use kiss3d::text::Font;
-use kiss3d::renderer::{LineRenderer, Renderer};
-
-use nalgebra::geometry::Translation;
-
-use std::path::Path;
+use sdl2::event::Event;
+use sdl2::keyboard::Keycode;
+use sdl2::pixels::Color;
+use sdl2::rect::{Point, Rect};
+use std::time::Duration;
+use sdl2::gfx::primitives::DrawRenderer;
 
 mod particle;
 
-fn main() {
-    let mut window = Window::new("Kiss3d: Window");
+const scale: f32 = 6.0;
 
-    let position = Isometry3::new(
-        Vector3::new(0.01, 0.0, 0.0), Vector3::new(0.0, 0.0, 0.0)
-    );
-    let velocity = Isometry3::new(
-        Vector3::new(0.01, -0.00001, -0.0001), Vector3::new(0.0, 0.0, 0.0)
-    );
-    let acceleration = Isometry3::new(
-        Vector3::new(0.0, -0.001, 0.0), Vector3::new(0.0, 0.0, 0.0)
-    );
-    let mass = 1.0;
+fn main() {
+    let sdl_context = sdl2::init().unwrap();
+    let video_subsystem = sdl_context.video().unwrap();
+
+    let window = video_subsystem
+        .window("rust-sdl2 demo", 800, 600)
+        .position_centered()
+        .build()
+        .unwrap();
+
+    let mut canvas = window.into_canvas().build().unwrap();
+
+    let mut event_pump = sdl_context.event_pump().unwrap();
 
     let mut p = particle::Particle::new(
-        position,
-        velocity,
-        acceleration,
-        mass,
+        na::Point2::new(200.0, 200.0),
+        na::Vector2::new(0.0, 0.0),
+        na::Vector2::new(0.0, 9.8 / scale),
+        0.0,
     );
 
-    p.display(&mut window, 0.01);
+    'running: loop {
+        for event in event_pump.poll_iter() {
+            match event {
+                Event::Quit { .. }
+                | Event::KeyDown {
+                    ..
+                } => break 'running,
+                _ => {}
+            }
+        }
+        canvas.set_draw_color(Color::RGB(0, 0, 0));
+        canvas.clear();
 
-    window.set_light(Light::StickToCamera);
+        p.display(&mut canvas);
+        p.update();
 
-    let mut camera = FirstPerson::new(Point3::new(0.0, 0.0, -1.0), Point3::origin());
-
-    while window.render_with_camera(&mut camera) {
-        let window_size = window.size();
-
-        // TODO: Scale based on camera & move to separate function
-        let a = &Point3::new(0.5 * 2.0, 0.3 * 2.0, 1.0);
-        let b = &Point3::new(0.5 * 2.0, -0.3 * 2.0, 1.0);
-        let c = &Point3::new(-0.5 * 2.0, 0.3 * 2.0, 1.0);
-        let d = &Point3::new(-0.5 * 2.0, -0.3 * 2.0, 1.0);
-        window.draw_line(a, b, &Point3::new(1.0, 0.0, 0.0));
-        window.draw_line(a, c, &Point3::new(1.0, 0.0, 0.0));
-        window.draw_line(b, d, &Point3::new(1.0, 0.0, 0.0));
-        window.draw_line(c, d, &Point3::new(1.0, 0.0, 0.0));
-        // TODO end
-
-        p.update(&window_size);
+        canvas.present();
     }
 }
