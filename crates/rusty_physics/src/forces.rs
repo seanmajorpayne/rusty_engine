@@ -13,3 +13,10 @@ pub fn generate_drag_force(velocity: na::Vector2<f32>, k: f32) -> na::Vector2<f3
 
     drag
 }
+
+// generate_friction
+// temporarily using k to represent the Normal Force * coefficient of friction
+// TODO: Include normal force based on object
+pub fn generate_friction_force(velocity: na::Vector2<f32>, k: f32) -> na::Vector2<f32> {
+    velocity * -1.0 * k
+}

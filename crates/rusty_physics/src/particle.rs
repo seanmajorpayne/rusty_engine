@@ -2,8 +2,10 @@ use nalgebra as na;
 use na::{Point2, Vector2};
 use sdl2::pixels::Color;
 
+use rand::Rng;
+
 // TODO: Changeable world variable
-const gravity_enabled: bool = true;
+const gravity_enabled: bool = false;
 
 pub struct Particle {
     position: Point2<f32>,
@@ -23,6 +25,25 @@ impl Particle {
             sum_of_forces: Vector2::new(0.0, 0.0),
             display_radius: 10,
             inv_mass: 1.0 / mass,
+        }
+    }
+
+    pub fn new_random(x: f32, y: f32) -> Self {
+        let mut rng = rand::thread_rng();
+
+        let position = Point2::new(x, y);
+        let velocity = Vector2::new(rng.gen_range(-100.0..100.0), rng.gen_range(-100.0..100.0));
+        let acceleration = Vector2::new(rng.gen_range(-100.0..100.0), rng.gen_range(-100.0..100.0));
+        let display_radius = rng.gen_range(1..25);
+        let inv_mass = 1.0 / rng.gen_range(1.0..100.0);
+
+        Self {
+            position,
+            velocity,
+            acceleration,
+            sum_of_forces: Vector2::new(0.0, 0.0),
+            display_radius,
+            inv_mass,
         }
     }
 

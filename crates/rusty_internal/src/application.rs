@@ -5,11 +5,12 @@ use std::{thread, time};
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 use std::time::Duration;
+use sdl2::mouse::MouseButton;
 use sdl2::rect::Rect;
 
 use rusty_graphics::render;
 use rusty_physics::{particle, forces};
-use rusty_physics::forces::generate_drag_force;
+use rusty_physics::forces::{generate_drag_force, generate_friction_force};
 
 pub struct Application {
     renderer: render::Renderer,
@@ -136,6 +137,18 @@ impl Application {
                     ..
                 } => self.particles[0].add_force(vec2!(0.0, 0.0)),
 
+                Event::MouseButtonDown {
+                    mouse_btn: MouseButton::Left,
+                    x,
+                    y,
+                    ..
+                } => {
+                    // spawn a random particle
+                    let p = particle::Particle::new_random(x as f32, y as f32);
+
+                    &mut self.particles.push(p);
+                },
+
                 _ => {}
             }
         }
@@ -159,9 +172,11 @@ impl Application {
 
     fn update_engine_state(&mut self) {
         for i in 0..self.particles.len() {
+            let particle_velocity = self.particles[i].velocity();
+            (&mut self.particles[i]).add_force(generate_friction_force(particle_velocity, 0.1 * 50.0));
+
             if self.particles[i].position().y >= (self.liquid.y() as f32) {
-                let particle_velocity = self.particles[i].velocity();
-                (&mut self.particles[i]).add_force(generate_drag_force( particle_velocity, 2.0));
+                (&mut self.particles[i]).add_force(generate_drag_force(particle_velocity, 2.0));
             }
             (&mut self.particles[i]).update(self.delta_time);
         }
