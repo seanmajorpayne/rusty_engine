@@ -13,6 +13,7 @@ pub struct Particle {
     acceleration: Vector2<f32>,
     sum_of_forces: Vector2<f32>,
     display_radius: i16,
+    mass: f32,
     inv_mass: f32,
 }
 
@@ -24,6 +25,7 @@ impl Particle {
             acceleration,
             sum_of_forces: Vector2::new(0.0, 0.0),
             display_radius: 10,
+            mass,
             inv_mass: 1.0 / mass,
         }
     }
@@ -35,7 +37,8 @@ impl Particle {
         let velocity = Vector2::new(rng.gen_range(-100.0..100.0), rng.gen_range(-100.0..100.0));
         let acceleration = Vector2::new(rng.gen_range(-100.0..100.0), rng.gen_range(-100.0..100.0));
         let display_radius = rng.gen_range(1..25);
-        let inv_mass = 1.0 / rng.gen_range(1.0..100.0);
+        let mass = rng.gen_range(1.0..100.0);
+        let inv_mass = 1.0 / mass;
 
         Self {
             position,
@@ -43,6 +46,7 @@ impl Particle {
             acceleration,
             sum_of_forces: Vector2::new(0.0, 0.0),
             display_radius,
+            mass,
             inv_mass,
         }
     }
@@ -50,6 +54,7 @@ impl Particle {
     pub fn position(&self) -> Point2<f32> { self.position }
     pub fn radius(&self) -> i16 { self.display_radius }
     pub fn velocity(&self) -> na::Vector2<f32> { self.velocity }
+    pub fn mass(&self) -> f32 { self.mass }
 
     pub fn add_force(&mut self, force: Vector2<f32>) {
         self.sum_of_forces += force;

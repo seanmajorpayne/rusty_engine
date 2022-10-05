@@ -10,7 +10,7 @@ use sdl2::rect::Rect;
 
 use rusty_graphics::render;
 use rusty_physics::{particle, forces};
-use rusty_physics::forces::{generate_drag_force, generate_friction_force};
+use rusty_physics::forces::{generate_drag_force, generate_friction_force, generate_gravitational_force};
 
 pub struct Application {
     renderer: render::Renderer,
@@ -53,7 +53,7 @@ impl Application {
 
         // TODO: temp
         let p = particle::Particle::new(
-            na::Point2::new(200.0, 200.0),
+            na::Point2::new(200.0, 300.0),
             na::Vector2::new(0.0, 0.0),
             na::Vector2::new(0.0, 0.0),  // TODO: Global constant for pixels_per_meter
             1.0,
@@ -63,7 +63,7 @@ impl Application {
             na::Point2::new(300.0, 200.0),
             na::Vector2::new(0.0, 0.0),
             na::Vector2::new(0.0, 0.0),  // TODO: Global constant for pixels_per_meter
-            10.0,
+            100.0,
         );
 
         // TODO: Based on window size
@@ -113,24 +113,24 @@ impl Application {
                 Event::KeyDown {
                     keycode: Some(Keycode::Left),
                     ..
-                } => self.particles[0].add_force(vec2!(-50.0, 0.0)),
+                } => self.particles[0].add_force(vec2!(-500.0, 0.0)),
 
                 Event::KeyDown {
                     keycode: Some(Keycode::Right),
                     ..
                 } => {
-                    self.particles[0].add_force(vec2!(50.0, 0.0));
+                    self.particles[0].add_force(vec2!(500.0, 0.0));
                 },
 
                 Event::KeyDown {
                     keycode: Some(Keycode::Up),
                     ..
-                } => self.particles[0].add_force(vec2!(0.0, 50.0)),
+                } => self.particles[0].add_force(vec2!(0.0, -500.0)),
 
                 Event::KeyDown {
                     keycode: Some(Keycode::Down),
                     ..
-                } => self.particles[0].add_force(vec2!(0.0, -50.0)),
+                } => self.particles[0].add_force(vec2!(0.0, 500.0)),
 
                 Event::KeyUp {
                     keycode: Some(Keycode::Left) | Some(Keycode::Right) | Some(Keycode::Up) | Some(Keycode::Down),
@@ -171,14 +171,23 @@ impl Application {
     }
 
     fn update_engine_state(&mut self) {
-        for i in 0..self.particles.len() {
-            let particle_velocity = self.particles[i].velocity();
-            (&mut self.particles[i]).add_force(generate_friction_force(particle_velocity, 0.1 * 50.0));
+        let particle_one = &self.particles[0];
+        let particle_two = &self.particles[1];
+        let (force_one, force_two) = generate_gravitational_force(particle_one, particle_two, 100.0);
+        (&mut self.particles[0]).add_force(force_one);
+        (&mut self.particles[1]).add_force(force_two);
+        (&mut self.particles[0]).update(self.delta_time);
+        (&mut self.particles[1]).update(self.delta_time);
 
-            if self.particles[i].position().y >= (self.liquid.y() as f32) {
-                (&mut self.particles[i]).add_force(generate_drag_force(particle_velocity, 2.0));
-            }
-            (&mut self.particles[i]).update(self.delta_time);
-        }
+        // for i in 0..self.particles.len() {
+        //     let particle_velocity = self.particles[i].velocity();
+        //     (&mut self.particles[i]).add_force(generate_friction_force(particle_velocity, 0.1 * 50.0));
+        //
+        //     if self.particles[i].position().y >= (self.liquid.y() as f32) {
+        //         (&mut self.particles[i]).add_force(generate_drag_force(particle_velocity, 2.0));
+        //     }
+        //
+        //     (&mut self.particles[i]).update(self.delta_time);
+        // }
     }
 }
