@@ -9,7 +9,7 @@ use sdl2::gfx::primitives::DrawRenderer;
 use sdl2::render::WindowCanvas;
 use sdl2::video::Window;
 
-use rusty_physics::particle;
+use rusty_physics::body;
 use nalgebra as na;
 
 // TODO: Eventually replace SDL2 with WGPU custom functions
@@ -44,20 +44,16 @@ impl Renderer {
     }
 
     // TODO: Render queue instead of individually passed objects
-    pub fn render(&mut self, particles: &Vec<particle::Particle>, liquid: &Rect) {
+    pub fn render(&mut self, bodies: &Vec<body::Body>, liquid: &Rect) {
         self.canvas.set_draw_color(Color::RGB(0, 0, 0));
         self.canvas.clear();
 
         self.canvas.set_draw_color(Color::RGB(0, 0, 255));
         let _ = self.canvas.fill_rect(*liquid);
 
-        for p in particles {
-            self.draw_filled_circle(
-                p.position().x as i16,
-                p.position().y as i16,
-                p.radius(),
-                Color::RGB(255, 210, 0)
-            );
+        // TODO: Not a fan of pulling info from both body and shape. Solution?
+        for b in bodies {
+            b.shape().render(&mut self.canvas);
         }
 
         self.canvas.present();
